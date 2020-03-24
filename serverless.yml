@@ -24,7 +24,8 @@ provider:
     - Effect: Allow
       Action:
         - states:StartExecution
-      Resource: "arn:aws:steps:${self:provider.region}:*:stateMachine:*"
+      Resource:
+        - "*"
 
 functions:
   execute:
@@ -41,6 +42,8 @@ functions:
     handler: handler.success
   fail:
     handler: handler.fail
+  done:
+    handler: handler.done
 
 stepFunctions:
   stateMachines:
@@ -70,6 +73,15 @@ stepFunctions:
             Type: Task
             Resource:
               Fn::GetAtt: [success, Arn]
+            Next: WaitState
+          WaitState:
+            Type: Wait
+            TimestampPath: "$.expirydate"
+            Next: DoneState
+          DoneState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [done, Arn]
             End: true
           FailState:
             Type: Task
