@@ -45,7 +45,7 @@ functions:
 stepFunctions:
   stateMachines:
     myStateMachine:
-      name: myStateMachine
+      name: MyStateMachine
       events:
         - http:
             path: hello
@@ -82,4 +82,4 @@ resources:
     MyStateMachine:
       Description: The ARN of the example state machine
       Value:
-        Ref: myStateMachine
+        Ref: MyStateMachine
