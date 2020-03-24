@@ -1,0 +1,85 @@
+service:
+  name: sls-step-functions
+
+custom:
+  webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+
+# Add the serverless-webpack plugin
+plugins:
+  - serverless-webpack
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: ap-northeast-1
+  apiGateway:
+    minimumCompressionSize: 1024 # Enable gzip compression for responses > 1 KB
+  environment:
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - states:StartExecution
+      Resource: "arn:aws:steps:${self:provider.region}:*:stateMachine:*"
+
+functions:
+  execute:
+    handler: handler.execute
+    environment:
+      statemachine_arn: ${self:resources.Outputs.MyStateMachine.Value}
+    events:
+      - http:
+          path: execute
+          method: get
+  hello:
+    handler: handler.hello
+  success:
+    handler: handler.success
+  fail:
+    handler: handler.fail
+
+stepFunctions:
+  stateMachines:
+    myStateMachine:
+      name: myStateMachine
+      events:
+        - http:
+            path: hello
+            method: GET
+      definition:
+        Comment: "An example of the Amazon States Language using a choice state."
+        StartAt: FirstState
+        States:
+          FirstState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [hello, Arn]
+            Next: ChoiceState
+          ChoiceState:
+            Type: Choice
+            Choices:
+              - Variable: "$.statusCode"
+                NumericEquals: 200
+                Next: SuccessState
+            Default: FailState
+          SuccessState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [success, Arn]
+            End: true
+          FailState:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [fail, Arn]
+            End: true
+
+resources:
+  Outputs:
+    MyStateMachine:
+      Description: The ARN of the example state machine
+      Value:
+        Ref: myStateMachine
