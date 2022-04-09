@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.644.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "source-map-support": "^0.5.10"
   },
   "devDependencies": {
